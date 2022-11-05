@@ -1,0 +1,29 @@
+version: '3' # docker-composeのバージョン
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    restart: always
+  web:
+    build: .
+    # tmp/pids/server.pidが残ってたら `A server is already running. ~~` のエラーでrailsを起動できないので事前に消してから、`rails sever` する
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    # dbと同じ記述書くと変更した時に修正漏れが発生しうるからどこかでまとめて記述したい
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - .:/myapp
+    ports:
+      - "3000:3000"
+    restart: always
+    tty: true
+    stdin_open: true
+    depends_on:
+      - db
+volumes:
+  postgres_volume:
